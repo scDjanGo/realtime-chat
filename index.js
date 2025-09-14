@@ -100,10 +100,9 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // ===== Хранилище =====
-// users = { uuid: { username, ws, unread: {} } }
-const users = {};
+const users = {}; // users = { uuid: { username, ws, unread: {} } }
 
-// Словарь для генерации реалистичных имён
+// Словарь для генерации имён
 const adjectives = [
   "Sunny",
   "Misty",
@@ -145,7 +144,6 @@ function sendJSON(ws, data) {
   }
 }
 
-// broadcast всем кроме инициатора
 function broadcastToAll(data, exceptUUID = null) {
   Object.entries(users).forEach(([uuid, u]) => {
     if (u.ws && u.ws.readyState === u.ws.OPEN && uuid !== exceptUUID) {
@@ -157,7 +155,6 @@ function broadcastToAll(data, exceptUUID = null) {
 const wss = new WebSocketServer({ noServer: true });
 
 wss.on("connection", (ws) => {
-  // создаем нового пользователя
   const userUUID = uuidv4();
   const username = generateUsername();
 
@@ -169,20 +166,17 @@ wss.on("connection", (ws) => {
     user: { uuid: userUUID, username },
   });
 
-  // 2. Отправляем ему список текущих онлайн-пользователей
+  // 2. Отправляем список активных
   const activeUsers = Object.entries(users)
     .filter(([uuid]) => uuid !== userUUID)
-    .map(([uuid, u]) => ({
-      uuid,
-      username: u.username,
-    }));
+    .map(([uuid, u]) => ({ uuid, username: u.username }));
 
   sendJSON(ws, {
     type: "activeUsers",
     users: activeUsers,
   });
 
-  // 3. Уведомляем остальных о новом пользователе
+  // 3. Уведомляем остальных
   broadcastToAll(
     { type: "newUser", user: { uuid: userUUID, username } },
     userUUID
@@ -198,7 +192,7 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.type === "message") {
-      // общее сообщение
+      // ==== ОБЩИЙ ЧАТ ====
       const messageObj = {
         type: "message",
         from: userUUID,
@@ -209,7 +203,7 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.type === "private" && msg.to) {
-      // приватное сообщение
+      // ==== ПРИВАТНЫЙ ЧАТ ====
       const recipient = users[msg.to];
       if (recipient && recipient.ws.readyState === recipient.ws.OPEN) {
         const privateMsg = {
@@ -220,23 +214,22 @@ wss.on("connection", (ws) => {
         };
         sendJSON(recipient.ws, privateMsg);
 
-        // непрочитанные (если не в активном чате, на фронте надо обрабатывать)
+        // Непрочитанные
         recipient.unread[userUUID] = (recipient.unread[userUUID] || 0) + 1;
 
-        // можно уведомить отправителя, что сообщение доставлено
+        // Подтверждение доставлено
         sendJSON(ws, { type: "delivered", to: msg.to });
       }
     }
   });
 
-  // 5. Когда пользователь отключается
+  // 5. Когда отключается
   ws.on("close", () => {
     delete users[userUUID];
     broadcastToAll({ type: "userLeft", uuid: userUUID });
   });
 });
 
-// ===== HTTP сервер =====
 const server = app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
 );
