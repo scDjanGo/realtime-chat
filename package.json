@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --loader ts-node/esm src/index.ts",
     "build": "tsc",
-    "start": "node src/index.js"
+    "start": "node --loader ts-node/esm src/index.ts"
   },
   "keywords": [],
   "author": "",
