@@ -11,7 +11,7 @@ currentWSS.on("connection", (ws, req) => {
   if (!req.url) return;
 
   // https://realtime-chat-vne1.onrender.com
-  const url = new URL(req.url, "http://localhost:3000");
+  const url = new URL(req.url, "https://realtime-chat-vne1.onrender.com");
 
   const myUUID = url.searchParams.get("my-uuid");
 
