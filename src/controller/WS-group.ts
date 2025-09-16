@@ -83,7 +83,7 @@ WSS.on("connection", (ws: any) => {
     userUUID
   );
 
-  ws.send(JSON.stringify({ type: "history", data: MESSAGES }));
+  ws.send(JSON.stringify({ type: "history", data: MESSAGES.slice(0, 30) }));
 
   ws.on("message", (rawMsg: any) => {
     let msg;
