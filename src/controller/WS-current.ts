@@ -5,8 +5,28 @@ import { CHATS } from "../model/Chats.js";
 import { USERS } from "../model/User.js";
 
 const currentWSS = new WebSocketServer({ noServer: true });
+const MESSAGES: ChatMessage[] = []
 
 currentWSS.on("connection", (ws, req) => {
+  if (!req.url) return;
+
+  // https://realtime-chat-vne1.onrender.com
+  const url = new URL(req.url, "http://localhost:3000");
+
+  const myUUID = url.searchParams.get("my-uuid");
+
+  if (!myUUID) {
+    ws.close();
+
+    return;
+  }
+
+  USERS[myUUID] = { ...USERS[myUUID], ws: ws as any };
+  const userMessages = MESSAGES.filter(item => item.from === myUUID || item.to === myUUID)
+
+  USERS[myUUID].ws.send(JSON.stringify(userMessages))
+
+
   ws.on("message", (msg: string) => {
     let data = JSON.parse(msg);
     const currentChatUUID = uuidv4();
@@ -46,6 +66,8 @@ currentWSS.on("connection", (ws, req) => {
         user.ws.send(JSON.stringify(data));
       }
     });
+
+    MESSAGES.push(data)
   });
 });
 
