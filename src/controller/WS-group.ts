@@ -26,6 +26,8 @@ const nouns = [
   "Eagle",
 ];
 
+const MESSAGES: any[] = []
+
 function generateUsername() {
   let username: string | undefined;
   do {
@@ -39,6 +41,7 @@ function generateUsername() {
 
 function sendJSON(ws: WebSocket, data: any) {
   if (ws.readyState === ws.OPEN) {
+    MESSAGES.push(data)
     ws.send(JSON.stringify(data));
   }
 }
@@ -59,13 +62,11 @@ WSS.on("connection", (ws: any) => {
 
   USERS[userUUID] = { username, ws, unread: {} };
 
-  // 1. Отправляем подключившемуся его данные
   sendJSON(ws, {
     type: "init",
     user: { uuid: userUUID, username },
   });
 
-  // 2. Отправляем список активных
   const activeUsers = Object.entries(USERS)
     .filter(([uuid]) => uuid !== userUUID)
     .map(([uuid, u]: any) => ({ uuid, username: u?.username }));
@@ -75,13 +76,13 @@ WSS.on("connection", (ws: any) => {
     users: activeUsers,
   });
 
-  // 3. Уведомляем остальных
   broadcastToAll(
     { type: "newUser", user: { uuid: userUUID, username } },
     userUUID
   );
 
-  // 4. Обработка сообщений
+  ws.send(JSON.stringify({type: "history", data: MESSAGES}))
+
   ws.on("message", (rawMsg: any) => {
     let msg;
     try {
@@ -122,7 +123,6 @@ WSS.on("connection", (ws: any) => {
     }
   });
 
-  // 5. Когда отключается
   ws.on("close", () => {
     delete USERS[userUUID];
     broadcastToAll({ type: "userLeft", uuid: userUUID });

@@ -5,7 +5,7 @@ import { CHATS } from "../model/Chats.js";
 import { USERS } from "../model/User.js";
 
 const currentWSS = new WebSocketServer({ noServer: true });
-const MESSAGES: ChatMessage[] = []
+const MESSAGES: ChatMessage[] = [];
 
 currentWSS.on("connection", (ws, req) => {
   if (!req.url) return;
@@ -22,10 +22,11 @@ currentWSS.on("connection", (ws, req) => {
   }
 
   USERS[myUUID] = { ...USERS[myUUID], ws: ws as any };
-  const userMessages = MESSAGES.filter(item => item.from === myUUID || item.to === myUUID)
+  const userMessages = MESSAGES.filter(
+    (item) => item.from === myUUID || item.to === myUUID
+  );
 
-  USERS[myUUID].ws.send(JSON.stringify(userMessages))
-
+  ws.send(JSON.stringify({ type: "history", data: userMessages }));
 
   ws.on("message", (msg: string) => {
     let data = JSON.parse(msg);
@@ -67,7 +68,7 @@ currentWSS.on("connection", (ws, req) => {
       }
     });
 
-    MESSAGES.push(data)
+    MESSAGES.push(data);
   });
 });
 
