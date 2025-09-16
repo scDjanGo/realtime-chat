@@ -26,7 +26,7 @@ const nouns = [
   "Eagle",
 ];
 
-const MESSAGES: any[] = []
+const MESSAGES: any[] = [];
 
 function generateUsername() {
   let username: string | undefined;
@@ -41,8 +41,10 @@ function generateUsername() {
 
 function sendJSON(ws: WebSocket, data: any) {
   if (ws.readyState === ws.OPEN) {
-    MESSAGES.push(data)
     ws.send(JSON.stringify(data));
+    if (data.type === "message") {
+      MESSAGES.push(data);
+    }
   }
 }
 
@@ -81,7 +83,7 @@ WSS.on("connection", (ws: any) => {
     userUUID
   );
 
-  ws.send(JSON.stringify({type: "history", data: MESSAGES}))
+  ws.send(JSON.stringify({ type: "history", data: MESSAGES }));
 
   ws.on("message", (rawMsg: any) => {
     let msg;

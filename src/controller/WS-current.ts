@@ -3,6 +3,7 @@ import { WebSocketServer } from "ws";
 import { v4 as uuidv4 } from "uuid";
 import { CHATS } from "../model/Chats.js";
 import { USERS } from "../model/User.js";
+import { WSS_Notifications } from "./WS-notification.js";
 
 const currentWSS = new WebSocketServer({ noServer: true });
 const MESSAGES: ChatMessage[] = [];
