@@ -104,24 +104,16 @@ WSS.on("connection", (ws: any) => {
       broadcastToAll(messageObj);
     }
 
-    if (msg.type === "private" && msg.to) {
-      // ==== ПРИВАТНЫЙ ЧАТ ====
-      const recipient = USERS[msg.to];
-      if (recipient && recipient.ws.readyState === recipient.ws.OPEN) {
-        const privateMsg = {
-          type: "private",
-          from: userUUID,
-          username,
-          message: msg.message,
-        };
-        sendJSON(recipient.ws, privateMsg);
+    
+    if (msg.type === "admin") {
+      // команда от админа
 
-        // Непрочитанные
-        recipient.unread[userUUID] = (recipient.unread[userUUID] || 0) + 1;
-
-        // Подтверждение доставлено
-        sendJSON(ws, { type: "delivered", to: msg.to });
+      const actions_of_admin = msg.message.split(" ")
+      
+      if(actions_of_admin.map((item: string) => item.toLowerCase()).includes("clear")) {
+        MESSAGES.splice(0, MESSAGES.length - 1)
       }
+    
     }
   });
 
